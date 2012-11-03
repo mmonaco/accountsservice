@@ -33,6 +33,8 @@ G_BEGIN_DECLS
 typedef GKeyFile Config;
 Config* cfg_init(void);
 void cfg_free(Config*);
+gchar **cfg_get_excludes(Config*);
+void cfg_free_excludes(Config*, gchar**);
 
 void sys_log (GDBusMethodInvocation *context,
               const gchar           *format,

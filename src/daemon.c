@@ -51,35 +51,6 @@
 #define PATH_FALSE "/bin/false"
 #define PATH_GDM_CUSTOM "/etc/gdm/custom.conf"
 
-static const char *default_excludes[] = {
-        "bin",
-        "root",
-        "daemon",
-        "adm",
-        "lp",
-        "sync",
-        "shutdown",
-        "halt",
-        "mail",
-        "news",
-        "uucp",
-        "operator",
-        "nobody",
-        "nobody4",
-        "noaccess",
-        "postgres",
-        "pvm",
-        "rpm",
-        "nfsnobody",
-        "pcap",
-        "mysql",
-        "ftp",
-        "games",
-        "man",
-        "at",
-        NULL
-};
-
 enum {
         PROP_0,
         PROP_DAEMON_VERSION
@@ -714,21 +685,27 @@ daemon_init (Daemon *daemon)
         gint i;
         GFile *file;
         GError *error;
+        gchar **excludes;
         Config *cfg;
 
         cfg = cfg_init();
 
         daemon->priv = DAEMON_GET_PRIVATE (daemon);
 
+        excludes = cfg_get_excludes(cfg);
         daemon->priv->exclusions = g_hash_table_new_full (g_str_hash,
                                                           g_str_equal,
                                                           g_free,
                                                           NULL);
 
-        for (i = 0; default_excludes[i] != NULL; i++) {
-                g_hash_table_insert (daemon->priv->exclusions,
-                                     g_strdup (default_excludes[i]),
-                                     GUINT_TO_POINTER (TRUE));
+        if (excludes) {
+                for (i = 0; excludes[i] != NULL; i++) {
+                        g_hash_table_insert (daemon->priv->exclusions,
+                                                  g_strdup (excludes[i]),
+                                                  GUINT_TO_POINTER (TRUE));
+                }
+
+                cfg_free_excludes(cfg, excludes);
         }
 
         daemon->priv->users = create_users_hash_table ();

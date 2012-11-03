@@ -29,6 +29,7 @@ Config *cfg_init()
         b = g_key_file_load_from_file(f, PATH_CONFIG_FILE, G_KEY_FILE_NONE, NULL);
 
         if (b) {
+                g_key_file_set_list_separator(f, ' ');
                 return (Config*) f;
         } else {
                 g_key_file_free(f);
@@ -40,6 +41,16 @@ void cfg_free(Config *cfg)
 {
         GKeyFile *f = (GKeyFile*) cfg;
         g_key_file_free(f);
+}
+
+gchar **cfg_get_excludes(Config *cfg)
+{
+        return g_key_file_get_string_list(cfg, "UserList", "Exclude", NULL, NULL);
+}
+
+void cfg_free_excludes(Config *cfg, gchar **e)
+{
+        g_strfreev(e);
 }
 
 
