@@ -35,6 +35,7 @@ Config* cfg_init(void);
 void cfg_free(Config*);
 gchar **cfg_get_excludes(Config*);
 void cfg_free_excludes(Config*, gchar**);
+uid_t cfg_get_min_uid(Config *cfg);
 
 void sys_log (GDBusMethodInvocation *context,
               const gchar           *format,

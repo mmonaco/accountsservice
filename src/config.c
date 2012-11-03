@@ -53,5 +53,12 @@ void cfg_free_excludes(Config *cfg, gchar **e)
         g_strfreev(e);
 }
 
+uid_t cfg_get_min_uid(Config *cfg)
+{
+        GKeyFile *f = (GKeyFile*) cfg;
+        int i = g_key_file_get_integer(f, "UserList", "MinUID", NULL);
+        if (i < 0) i = 0;
+        return (uid_t) i;
+}
 
 /* vim: set ts=8 sw=8 sts=8 et : */

@@ -62,6 +62,7 @@ struct DaemonPrivate {
 
         GHashTable *users;
         GHashTable *exclusions;
+        uid_t       min_uid;
 
         User *autologin;
 
@@ -129,11 +130,15 @@ error_get_type (void)
 }
 
 gboolean
-daemon_local_user_is_excluded (Daemon *daemon, const gchar *username, const gchar *shell)
+daemon_local_user_is_excluded (Daemon *daemon, const gchar *username, const gchar *shell, uid_t uid)
 {
         int ret;
 
         if (g_hash_table_lookup (daemon->priv->exclusions, username)) {
+                return TRUE;
+        }
+
+        if (uid < daemon->priv->min_uid) {
                 return TRUE;
         }
 
@@ -452,7 +457,7 @@ load_entries (Daemon             *daemon,
                         break;
 
                 /* Skip system users... */
-                if (daemon_local_user_is_excluded (daemon, pwent->pw_name, pwent->pw_shell)) {
+                if (daemon_local_user_is_excluded (daemon, pwent->pw_name, pwent->pw_shell, pwent->pw_uid)) {
                         g_debug ("skipping user: %s", pwent->pw_name);
                         continue;
                 }
@@ -692,7 +697,10 @@ daemon_init (Daemon *daemon)
 
         daemon->priv = DAEMON_GET_PRIVATE (daemon);
 
+        daemon->priv->min_uid = cfg_get_min_uid(cfg);
+
         excludes = cfg_get_excludes(cfg);
+
         daemon->priv->exclusions = g_hash_table_new_full (g_str_hash,
                                                           g_str_equal,
                                                           g_free,
@@ -1010,7 +1018,7 @@ finish_list_cached_users (gpointer user_data)
                         continue;
                 }
 
-                if (daemon_local_user_is_excluded (data->daemon, name, shell)) {
+                if (daemon_local_user_is_excluded (data->daemon, name, shell, uid)) {
                         g_debug ("user %s %ld excluded\n", name, (long) uid);
                         continue;
                 }
