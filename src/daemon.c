@@ -714,6 +714,9 @@ daemon_init (Daemon *daemon)
         gint i;
         GFile *file;
         GError *error;
+        Config *cfg;
+
+        cfg = cfg_init();
 
         daemon->priv = DAEMON_GET_PRIVATE (daemon);
 
@@ -777,6 +780,7 @@ daemon_init (Daemon *daemon)
                 g_error_free (error);
         }
 
+        cfg_free(cfg);
         queue_reload_users (daemon);
         queue_reload_autologin (daemon);
 }

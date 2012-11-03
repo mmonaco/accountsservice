@@ -28,6 +28,12 @@
 
 G_BEGIN_DECLS
 
+#define PATH_CONFIG_FILE "/etc/accountsservice.conf"
+
+typedef GKeyFile Config;
+Config* cfg_init(void);
+void cfg_free(Config*);
+
 void sys_log (GDBusMethodInvocation *context,
               const gchar           *format,
                                      ...);

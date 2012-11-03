@@ -34,6 +34,7 @@ accounts_daemon_SOURCES = 	\
 	user.c			\
 	util.h			\
 	util.c			\
+	config.c                \
 	main.c
 
 accounts_daemon_LDADD = 	\
