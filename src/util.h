@@ -23,6 +23,8 @@
 #define __UTIL_H__
 
 #include <glib.h>
+#include <gio/gio.h>
+#include <types.h>
 
 G_BEGIN_DECLS
 
