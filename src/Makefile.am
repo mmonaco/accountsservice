@@ -4,6 +4,8 @@ INCLUDES = 			\
 	-DDATADIR=\""$(datadir)"\" \
 	-DICONDIR=\"$(localstatedir)/lib/AccountsService/icons\" \
 	-DUSERDIR=\"$(localstatedir)/lib/AccountsService/users\" \
+	-DCONFDIR=\"$(sysconfdir)\" \
+	-DPKGLIBDIR=\"$(pkglibdir)\" \
 	$(DBUS_GLIB_CFLAGS) 	\
 	$(GIO_CFLAGS)	 	\
 	$(GLIB_CFLAGS)		\
@@ -28,6 +30,7 @@ accounts_daemon_SOURCES = 	\
 	$(enums_h_sources)	\
 	$(BUILT_SOURCES)	\
 	types.h			\
+	config.c                \
 	daemon.h		\
 	daemon.c		\
 	user.h			\

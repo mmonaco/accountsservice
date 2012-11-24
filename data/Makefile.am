@@ -7,6 +7,9 @@ dbusif_DATA = \
 dbusconfdir   = $(sysconfdir)/dbus-1/system.d
 dbusconf_DATA = org.freedesktop.Accounts.conf
 
+configdir     = $(pkglibdir)
+config_DATA   = accountsservice.conf
+
 servicedir       = $(datadir)/dbus-1/system-services
 service_in_files = org.freedesktop.Accounts.service.in
 service_DATA     = $(service_in_files:.service.in=.service)
@@ -32,6 +35,7 @@ endif
 EXTRA_DIST = 			\
 	$(dbusif_DATA)		\
 	$(dbusconf_DATA)	\
+	$(config_DATA)		\
 	$(service_in_files)	\
 	$(policy_in_files)      \
 	accounts-daemon.service.in

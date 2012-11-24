@@ -94,6 +94,8 @@ struct DaemonPrivate {
 
         User *autologin;
 
+        Config *cfg;
+
         GFileMonitor *passwd_monitor;
         GFileMonitor *shadow_monitor;
         GFileMonitor *gdm_monitor;
@@ -730,6 +732,8 @@ daemon_init (Daemon *daemon)
 
         daemon->priv->users = create_users_hash_table ();
 
+        daemon->priv->cfg = cfg_init();
+
         file = g_file_new_for_path (PATH_PASSWD);
         daemon->priv->passwd_monitor = g_file_monitor_file (file,
                                                             G_FILE_MONITOR_NONE,
@@ -797,6 +801,8 @@ daemon_finalize (GObject *object)
                 g_object_unref (daemon->priv->bus_connection);
 
         g_hash_table_destroy (daemon->priv->users);
+
+        cfg_free(daemon->priv->cfg);
 
         G_OBJECT_CLASS (daemon_parent_class)->finalize (object);
 }

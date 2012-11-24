@@ -28,6 +28,12 @@
 
 G_BEGIN_DECLS
 
+struct _cfg_struct;
+typedef struct _cfg_struct Config;
+
+Config*    cfg_init(void);
+void       cfg_free(Config*);
+
 void sys_log (GDBusMethodInvocation *context,
               const gchar           *format,
                                      ...);
