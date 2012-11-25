@@ -487,7 +487,7 @@ load_entries (Daemon             *daemon,
                 }
 
                 /* ignore duplicate entries */
-                if (g_hash_table_lookup (users, pwent->pw_name)) {
+                if (g_hash_table_contains (users, pwent->pw_name)) {
                         continue;
                 }
 
