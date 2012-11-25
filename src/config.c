@@ -30,11 +30,15 @@
 
 #define CFG_PATH_LIB          PKGLIBDIR "/accountsservice.conf"
 #define CFG_PATH_ETC          CONFDIR   "/accountsservice.conf"
+#define CFG_DEFAULT_MIN_UID   500
 
 struct _cfg_struct {
         GKeyFile*      file_etc;
         GKeyFile*      file_lib;
+        uid_t          min_uid;
 };
+
+static void _cfg_parse_min_uid(Config*);
 
 /**
  * Alloc/Free
@@ -49,6 +53,7 @@ Config *cfg_init()
 
         cfg->file_etc  = g_key_file_new();
         cfg->file_lib  = g_key_file_new();
+        cfg->min_uid   = CFG_DEFAULT_MIN_UID;
 
         /* load config from /etc */
 
@@ -76,6 +81,8 @@ Config *cfg_init()
 
         /* parse options */
 
+        _cfg_parse_min_uid(cfg);
+
         /* with the above code, these aren't needed anymore */
 
         g_key_file_free(cfg->file_etc);
@@ -97,8 +104,42 @@ void cfg_free(Config *cfg)
  * Getters
 **/
 
+uid_t cfg_get_min_uid(const Config *cfg)
+{
+        if (cfg)
+                return cfg->min_uid;
+        else
+                return CFG_DEFAULT_MIN_UID;
+}
+
 /**
  * Parsers
 **/
+
+static void _cfg_parse_min_uid(Config* cfg)
+{
+        GError* err;
+        int i;
+
+        /* etc takes priority over lib */
+
+        if (cfg->file_etc) {
+                err = NULL;
+                i = g_key_file_get_integer(cfg->file_etc, "Accounts", "MinimumUID", &err);
+                if (err == NULL) {
+                        cfg->min_uid = (uid_t) ( (i >= 0) ? i : 0 );
+                        return;
+                }
+        }
+
+        if (cfg->file_lib) {
+                err = NULL;
+                i = g_key_file_get_integer(cfg->file_lib, "Accounts", "MinimumUID", &err);
+                if (err == NULL) {
+                        cfg->min_uid = (uid_t) ( (i >= 0) ? i : 0 );
+                        return;
+                }
+        }
+}
 
 /* vim: set ts=8 sw=8 sts=8 et : */
