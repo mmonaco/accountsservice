@@ -34,6 +34,7 @@ typedef struct _cfg_struct Config;
 Config*    cfg_init(void);
 void       cfg_free(Config*);
 uid_t      cfg_get_min_uid(const Config*);
+gboolean   cfg_get_user_excluded(const Config*, const gchar*);
 
 void sys_log (GDBusMethodInvocation *context,
               const gchar           *format,
