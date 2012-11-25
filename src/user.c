@@ -148,6 +148,32 @@ account_type_from_pwent (struct passwd *pwent)
         return ACCOUNT_TYPE_STANDARD;
 }
 
+static gboolean
+user_has_system_shell (User *user)
+{
+        gboolean ret = FALSE;
+
+        /* HAVE_GETUSERSHELL doesn't seem to be available... */
+
+        if (user->shell != NULL) {
+                char *valid_shell;
+                ret = TRUE;
+                g_debug ("determine_sys_account: %s: shell is %s",
+                                user->user_name, user->shell);
+                setusershell ();
+                while ((valid_shell = getusershell ()) != NULL) {
+                        if (g_strcmp0 (user->shell, valid_shell) == 0)
+                                ret = FALSE;
+                }
+                endusershell ();
+        }
+
+        g_debug ("determine_sys_account: %s: is%s a system account",
+                user->user_name, (ret) ? "" : " not");
+
+        return ret;
+}
+
 void
 user_update_from_pwent (User          *user,
                         struct passwd *pwent)
@@ -287,12 +313,45 @@ user_update_from_pwent (User          *user,
                 g_object_notify (G_OBJECT (user), "password-mode");
         }
 
-        user->system_account = daemon_local_user_is_excluded (user->daemon,
-                                                              user->user_name,
-                                                              pwent->pw_shell);
+        if (!user->system_account &&
+            user_has_system_shell (user)) {
+
+                user->system_account = TRUE;
+                user->excluded = TRUE;
+                changed = TRUE;
+        }
 
         g_object_thaw_notify (G_OBJECT (user));
 
+        if (changed)
+                accounts_user_emit_changed (ACCOUNTS_USER (user));
+}
+
+void
+user_update_from_config (User          *user,
+                         const Config  *cfg)
+{
+        gboolean changed = FALSE;
+        
+        g_object_freeze_notify (G_OBJECT (user));
+
+        if (!user->system_account &&
+            (user->uid < cfg_get_min_uid (cfg))) {
+
+                user->system_account = TRUE;
+                user->excluded = TRUE;
+                changed = TRUE;
+        }
+
+        if (!user->excluded &&
+            cfg_get_user_excluded (cfg, user->user_name)) {
+
+                user->excluded = TRUE;
+                changed = TRUE;
+        }
+        
+        g_object_thaw_notify (G_OBJECT (user));
+        
         if (changed)
                 accounts_user_emit_changed (ACCOUNTS_USER (user));
 }
