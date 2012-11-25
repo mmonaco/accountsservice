@@ -68,6 +68,7 @@ enum {
         PROP_AUTOMATIC_LOGIN,
         PROP_SYSTEM_ACCOUNT,
         PROP_LOCAL_ACCOUNT,
+        PROP_EXCLUDED,
 };
 
 struct User {
@@ -100,6 +101,7 @@ struct User {
         gboolean      automatic_login;
         gboolean      system_account;
         gboolean      local_account;
+        gboolean      excluded;
 };
 
 typedef struct UserClass
@@ -300,6 +302,8 @@ user_update_from_keyfile (User     *user,
                           GKeyFile *keyfile)
 {
         gchar *s;
+        gboolean b;
+        GError *err = NULL;
 
         g_object_freeze_notify (G_OBJECT (user));
 
@@ -346,6 +350,11 @@ user_update_from_keyfile (User     *user,
                 g_object_notify (G_OBJECT (user), "icon-file");
         }
 
+        b = g_key_file_get_boolean (keyfile, "User", "Excluded", &err);
+        if (err == NULL) {
+                user->excluded = b;
+        }
+
         g_object_thaw_notify (G_OBJECT (user));
 }
 
@@ -380,6 +389,8 @@ user_save_to_keyfile (User     *user,
 
         if (user->icon_file)
                 g_key_file_set_string (keyfile, "User", "Icon", user->icon_file);
+
+	g_key_file_set_boolean (keyfile, "User", "Excluded", user->excluded);
 }
 
 static void
@@ -520,6 +531,12 @@ const gchar *
 user_get_shell(User *user)
 {
 	return user->shell;
+}
+
+gboolean
+user_get_excluded(User *user)
+{
+        return user->excluded;
 }
 
 static void
@@ -1627,6 +1644,46 @@ user_set_automatic_login (AccountsUser          *auser,
         return TRUE;
 }
 
+static void
+user_change_excluded_authorized_cb (Daemon                *daemon,
+                                    User                  *user,
+                                    GDBusMethodInvocation *context,
+                                    gpointer               data)
+
+{
+        gboolean excluded = GPOINTER_TO_INT (data);
+
+        if (user->excluded != excluded) {
+                sys_log (context,
+                         "%s account of user '%s' (%d)",
+                         excluded ? "excluding" : "including", user->user_name, user->uid);
+
+                user->excluded = excluded;
+                accounts_user_emit_changed (ACCOUNTS_USER (user));
+                g_object_notify (G_OBJECT (user), "excluded");
+        }
+
+        accounts_user_complete_set_excluded (ACCOUNTS_USER (user), context);
+}
+
+static gboolean
+user_set_excluded (AccountsUser          *auser,
+                   GDBusMethodInvocation *context,
+                   gboolean               excluded)
+{
+        User *user = (User*)auser;
+        daemon_local_check_auth (user->daemon,
+                                 user,
+                                 "org.freedesktop.accounts.user-administration",
+                                 TRUE,
+                                 user_change_excluded_authorized_cb,
+                                 context,
+                                 GINT_TO_POINTER (excluded),
+                                 NULL);
+
+        return TRUE;
+}
+
 static guint64
 user_real_get_uid (AccountsUser *user)
 {
@@ -1744,6 +1801,12 @@ user_real_get_system_account (AccountsUser *user)
         return USER (user)->system_account;
 }
 
+static gboolean
+user_real_get_excluded (AccountsUser *user)
+{
+        return USER (user)->excluded;
+}
+
 static void
 user_finalize (GObject *object)
 {
@@ -1803,6 +1866,9 @@ user_set_property (GObject      *object,
                 break;
         case PROP_SYSTEM_ACCOUNT:
                 user->system_account = g_value_get_boolean (value);
+                break;
+        case PROP_EXCLUDED:
+                user->excluded = g_value_get_boolean (value);
                 break;
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
@@ -1886,6 +1952,9 @@ user_get_property (GObject    *object,
         case PROP_LOCAL_ACCOUNT:
                 g_value_set_boolean (value, user->local_account);
                 break;
+        case PROP_EXCLUDED:
+                g_value_set_boolean (value, user->excluded);
+                break;
         default:
                 G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
                 break;
@@ -1923,6 +1992,7 @@ user_accounts_user_iface_init (AccountsUserIface *iface)
         iface->handle_set_shell = user_set_shell;
         iface->handle_set_user_name = user_set_user_name;
         iface->handle_set_xsession = user_set_x_session;
+        iface->handle_set_excluded = user_set_excluded;
         iface->get_uid = user_real_get_uid;
         iface->get_user_name = user_real_get_user_name;
         iface->get_real_name = user_real_get_real_name;
@@ -1942,6 +2012,7 @@ user_accounts_user_iface_init (AccountsUserIface *iface)
         iface->get_password_hint = user_real_get_password_hint;
         iface->get_automatic_login = user_real_get_automatic_login;
         iface->get_system_account = user_real_get_system_account;
+        iface->get_excluded = user_real_get_excluded;
 }
 
 static void
@@ -1966,4 +2037,5 @@ user_init (User *user)
         user->automatic_login = FALSE;
         user->system_account = FALSE;
         user->login_history = NULL;
+        user->excluded = FALSE;
 }

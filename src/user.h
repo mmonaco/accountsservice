@@ -69,6 +69,7 @@ gboolean       user_get_local_account       (User          *user);
 const gchar *  user_get_object_path         (User          *user);
 uid_t          user_get_uid                 (User          *user);
 const gchar *  user_get_shell               (User          *user);
+gboolean       user_get_excluded            (User          *user);
 
 G_END_DECLS
 
